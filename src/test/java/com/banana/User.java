@@ -1,4 +1,4 @@
-package com.banana.test;
+package com.banana;
 
 public class User {
 

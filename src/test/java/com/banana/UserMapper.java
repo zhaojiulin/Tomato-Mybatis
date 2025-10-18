@@ -1,4 +1,4 @@
-package com.banana.test;
+package com.banana;
 
 import com.banana.orm.anno.Param;
 import com.banana.orm.anno.Select;

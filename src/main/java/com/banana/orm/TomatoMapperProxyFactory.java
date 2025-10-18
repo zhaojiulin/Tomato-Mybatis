@@ -35,7 +35,8 @@ public class TomatoMapperProxyFactory {
             String sql = annotation.value();
             ParamMappingTokenHandle paramMappingTokenHandle = new ParamMappingTokenHandle();
             SqlParseResult sqlParseResult = paramMappingTokenHandle.handleToken(sql);
-            Connection connection = getConnection();
+            DatabaseConnectionPool databaseConnectionPool = DatabaseConnectionPool.getInstance();
+            Connection connection = databaseConnectionPool.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sqlParseResult.getParseSql());
             // 参数映射关系
             HashMap<String, Object> paramMapping = paramValueMapping(method, args);
@@ -47,7 +48,7 @@ public class TomatoMapperProxyFactory {
             preparedStatement.execute();
             ResultSet resultSet = preparedStatement.getResultSet();
             Object result = getResult(method, resultSet);
-            connection.close();
+            databaseConnectionPool.releaseConnection(connection);
             return result;
         });
         T proxyInstance1 = (T) proxyInstance;
@@ -92,10 +93,6 @@ public class TomatoMapperProxyFactory {
 
         }
         return paramMapping;
-    }
-
-    private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:mysql://192.168.31.89:3306/tomato", "root", "Mysql@1q2w3e");
     }
 
     private boolean isBasicType(Class<?> type) {
