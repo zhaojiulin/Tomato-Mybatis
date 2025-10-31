@@ -36,6 +36,7 @@ public class DatabaseConnectionPool {
 
     /**
      * @description: 创建单例实例
+     * // synchronized 双重检查 防止上一个获取锁的已经创建过
      * @author zhaojiulin
      * @param: null
      * @return: 连接池唯一实例
@@ -44,7 +45,6 @@ public class DatabaseConnectionPool {
     public static DatabaseConnectionPool getInstance() {
         if (instance == null) {
             synchronized (DatabaseConnectionPool.class) {
-                // 双重检查
                 if (instance == null) {
                     instance = new DatabaseConnectionPool();
                 }
