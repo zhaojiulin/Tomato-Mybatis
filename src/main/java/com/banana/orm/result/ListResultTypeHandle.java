@@ -27,6 +27,7 @@ public class ListResultTypeHandle<T> extends ResultTypeHandle<T> implements Resu
         HashMap<String, Method> setMethodMapping = new HashMap<>();
         for (Method declaredMethod : type.getDeclaredMethods()) {
             if (declaredMethod.getName().startsWith("set")) {
+                // 对象set
                 String propertyName = declaredMethod.getName().substring(3);
                 propertyName = propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1);
                 setMethodMapping.put(propertyName, declaredMethod);
@@ -49,6 +50,7 @@ public class ListResultTypeHandle<T> extends ResultTypeHandle<T> implements Resu
                 Method setMethod = setMethodMapping.get(columnNames.get(i));
                 Class<?>[] parameterTypes = setMethod.getParameterTypes();
                 try {
+                    // 对象成员变量赋值
                     setMethod.invoke(newInstance, getTypeValue((Class<T>) parameterTypes[0], rs, columnNames.get(i)));
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException(e);

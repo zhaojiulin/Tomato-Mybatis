@@ -1,7 +1,7 @@
 package com.banana.orm;
 
 import com.banana.orm.anno.Param;
-import com.banana.orm.anno.Select;
+import com.banana.orm.anno.SqlExec;
 import com.banana.orm.handle.BasicTypeHandle;
 import com.banana.orm.parsing.ParamMappingTokenHandle;
 import com.banana.orm.parsing.SqlParseResult;
@@ -31,23 +31,29 @@ public class TomatoMapperProxyFactory {
 
         Object proxyInstance = Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{clazz}, (proxy, method, args) -> {
             // sql
-            Select annotation = method.getAnnotation(Select.class);
+            SqlExec annotation = method.getAnnotation(SqlExec.class);
             String sql = annotation.value();
+            // sql处理为预编译使用
             ParamMappingTokenHandle paramMappingTokenHandle = new ParamMappingTokenHandle();
             SqlParseResult sqlParseResult = paramMappingTokenHandle.handleToken(sql);
+            // 数据库连接池
             DatabaseConnectionPool databaseConnectionPool = DatabaseConnectionPool.getInstance();
             Connection connection = databaseConnectionPool.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sqlParseResult.getParseSql());
             // 参数映射关系
             HashMap<String, Object> paramMapping = paramValueMapping(method, args);
+            // 预编译
             for (int i = 0; i < sqlParseResult.getParamList().size(); i++) {
                 Object object = paramMapping.get(sqlParseResult.getParamList().get(i));
                 BasicTypeHandle<?> basicTypeHandle = new BasicTypeHandle<>(object.getClass());
                 basicTypeHandle.setParameter(preparedStatement, i + 1, object);
             }
+            // 执行
             preparedStatement.execute();
             ResultSet resultSet = preparedStatement.getResultSet();
+            // 返回数据处理
             Object result = getResult(method, resultSet);
+            // 归还连接池
             databaseConnectionPool.releaseConnection(connection);
             return result;
         });
@@ -58,10 +64,12 @@ public class TomatoMapperProxyFactory {
     private <T> Object getResult(Method method, ResultSet resultSet) throws SQLException {
         Class<?> methodReturnType = method.getReturnType();
         Object result = null;
+        // 基本数据类型
         if (isBasicType(methodReturnType)) {
             BasicResultTypeHandler basicResultTypeHandler = new BasicResultTypeHandler<>(methodReturnType);
             result = basicResultTypeHandler.handle(resultSet);
         } else if (List.class.isAssignableFrom(methodReturnType)) {
+            // 集合类型
             Class classType = null;
             Type genericReturnType = method.getGenericReturnType();
             boolean isList = false;
